@@ -1,3 +1,19 @@
+<script setup>
+import axios from "axios";
+import { onMounted, ref } from "vue";
+const users = ref([]);
+
+const getUsers = () => {
+    axios.get("/api/users").then((response) => {
+        users.value = response.data;
+    });
+};
+
+onMounted(() => {
+    getUsers();
+});
+</script>
+
 <template>
     <div class="content-header">
         <div class="container-fluid">
@@ -41,10 +57,13 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>1.</td>
-                                        <td>Update software</td>
-                                        <td>jhondeland@gmail.com</td>
+                                    <tr
+                                        v-for="(user, index) in users"
+                                        :key="user.id"
+                                    >
+                                        <td>{{ index + 1 }}</td>
+                                        <td>{{ user.name }}</td>
+                                        <td>{{ user.email }}</td>
                                         <td>-</td>
                                         <td>-</td>
                                         <td>-</td>
