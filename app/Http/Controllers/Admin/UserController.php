@@ -28,10 +28,12 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
-        $request->validate([
-            'email' => 'required|email|unique:users,email',
-        ]);
         $user = User::find($id);
+        if ($request->email != $user->email) {
+            $request->validate([
+                'email' => 'required|email|unique:users,email',
+            ]);
+        }
         if ($request->password) {
             $request['password'] = bcrypt($request->password);
         } else {

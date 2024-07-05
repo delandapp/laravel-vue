@@ -4,6 +4,9 @@ import { onMounted, ref, watch } from "vue";
 import $ from "jquery";
 import { Form, Field } from "vee-validate";
 import * as yup from "yup";
+import { useToastSweet } from "../../toastsweet";
+// const toast = useToastr();
+const toast = useToastSweet();
 
 const users = ref([]);
 const editing = ref(false);
@@ -40,9 +43,16 @@ const createUser = (values, { resetForm, setFieldError }) => {
             // Or
             users.value.unshift(response.data);
             resetForm();
+            toast.fire({
+                icon: "success",
+                title: "User created successfully",
+            });
         })
         .catch((error) => {
-            console.log(error);
+            toast.fire({
+                icon: "error",
+                title: error.response.data.message,
+            });
             setFieldError("email", error.response.data.errors.email[0]);
         });
 };
@@ -67,10 +77,17 @@ const updateUser = (user, { resetForm, setFieldError }) => {
             const index = users.value.findIndex((u) => u.id === user.id);
             users.value[index] = response.data;
             $("#formUserModal").modal("hide");
+            toast.fire({
+                icon: "success",
+                title: "User updated successfully",
+            });
         })
         .catch((error) => {
+            toast.fire({
+                icon: "error",
+                title: error.response.data.message,
+            });
             setFieldError("email", error.response.data.errors.email[0]);
-            console.log(error);
         });
 };
 
