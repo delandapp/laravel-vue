@@ -20,4 +20,16 @@ class UserController extends Controller
         $user = User::create($request->all());
         return response()->json($user);
     }
+
+    public function update(Request $request, $id)
+    {
+        $user = User::find($id);
+        if ($request->password) {
+            $request['password'] = bcrypt($request->password);
+        } else {
+            unset($request['password']);
+        }
+        $user->update($request->all());
+        return response()->json($user);
+    }
 }

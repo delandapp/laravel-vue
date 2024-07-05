@@ -1,15 +1,25 @@
 <script setup>
 import axios from "axios";
-import { onMounted, ref, reactive } from "vue";
+import { onMounted, ref, watch } from "vue";
 import $ from "jquery";
 import { Form, Field } from "vee-validate";
 import * as yup from "yup";
 
 const users = ref([]);
-const schema = yup.object({
+const editing = ref(false);
+const form = ref(null);
+const formValue = ref({});
+const schemaCreate = yup.object({
     name: yup.string().min(3).required(),
     email: yup.string().email().required(),
-    password: yup.string().required(),
+    password: yup.string().min(8).required(),
+});
+const schemaEdit = yup.object({
+    name: yup.string().min(3).required(),
+    email: yup.string().email().required(),
+    password: yup.string().when((password, schema) => {
+        return password ? schema.min(8) : schema;
+    }),
 });
 
 const getUsers = () => {
@@ -21,7 +31,7 @@ const getUsers = () => {
 const createUser = (values, { resetForm }) => {
     // console.log(values);
     axios.post("/api/users", values).then((response) => {
-        $("#createUserModal").modal("hide");
+        $("#formUserModal").modal("hide");
         // getUsers();
         // Or
         // users.value.push(response.data);
@@ -29,6 +39,47 @@ const createUser = (values, { resetForm }) => {
         users.value.unshift(response.data);
         resetForm();
     });
+};
+
+const addUser = () => {
+    editing.value = false;
+    $("#formUserModal").modal("show");
+};
+
+const handlingForm = () => {
+    console.log("test");
+    if (editing.value) {
+        updateUser(formValue.value, form.value);
+    } else {
+        createUser(formValue.value, form.value);
+    }
+};
+
+const updateUser = (user, { resetForm }) => {
+    console.log(user);
+    axios
+        .put(`/api/users/${user.id}`, user)
+        .then((response) => {
+            const index = users.value.findIndex((u) => u.id === user.id);
+            users.value[index] = response.data;
+            $("#formUserModal").modal("hide");
+        })
+        .catch((error) => {
+            console.log(error);
+        })
+        .finally(() => {
+            resetForm();
+        });
+};
+
+const editUser = (user) => {
+    editing.value = true;
+    formValue.value = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+    };
+    $("#formUserModal").modal("show");
 };
 
 onMounted(() => {
@@ -62,8 +113,7 @@ onMounted(() => {
             <button
                 type="button"
                 class="mb-2 btn btn-primary"
-                data-toggle="modal"
-                data-target="#createUserModal"
+                @click="addUser()"
             >
                 Add New User
             </button>
@@ -97,7 +147,13 @@ onMounted(() => {
                                         <td>{{ user.email }}</td>
                                         <td>-</td>
                                         <td>-</td>
-                                        <td>-</td>
+                                        <td>
+                                            <a
+                                                href="#"
+                                                @click.prevent="editUser(user)"
+                                                ><i class="fa fa-edit"></i
+                                            ></a>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -107,7 +163,7 @@ onMounted(() => {
 
                 <div
                     class="modal fade"
-                    id="createUserModal"
+                    id="formUserModal"
                     tabindex="-1"
                     role="dialog"
                     aria-labelledby="exampleModalLabel"
@@ -120,7 +176,10 @@ onMounted(() => {
                                     class="modal-title"
                                     id="staticBackdropLabel"
                                 >
-                                    Add New User
+                                    <span v-if="editing"
+                                        >Editing User Form</span
+                                    >
+                                    <span v-else>Create User Form</span>
                                 </h5>
                                 <button
                                     type="button"
@@ -134,9 +193,13 @@ onMounted(() => {
 
                             <Form
                                 autocomplete="off"
-                                @submit="createUser"
-                                :validation-schema="schema"
+                                @submit="handlingForm"
+                                :validation-schema="
+                                    editing ? schemaEdit : schemaCreate
+                                "
                                 v-slot="{ errors }"
+                                :initial-values="formValue"
+                                ref="form"
                             >
                                 <div class="modal-body">
                                     <div class="form-group">
@@ -149,6 +212,7 @@ onMounted(() => {
                                             type="text"
                                             class="form-control"
                                             id="name"
+                                            v-model="formValue.name"
                                             aria-describedby="nameHelp"
                                             placeholder="Enter full name"
                                         />
@@ -167,6 +231,7 @@ onMounted(() => {
                                             type="email"
                                             class="form-control"
                                             id="email"
+                                            v-model="formValue.email"
                                             aria-describedby="nameHelp"
                                             placeholder="Enter full name"
                                         />
@@ -183,6 +248,7 @@ onMounted(() => {
                                             }"
                                             name="password"
                                             type="password"
+                                            v-model="formValue.password"
                                             class="form-control"
                                             id="password"
                                             aria-describedby="nameHelp"
@@ -198,6 +264,7 @@ onMounted(() => {
                                         type="button"
                                         class="btn btn-secondary"
                                         data-dismiss="modal"
+                                        @click="editing ? form.resetForm() : ''"
                                     >
                                         Cancel
                                     </button>
