@@ -16,6 +16,7 @@ class UserController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'created_at' => $user->created_at->format('d-m-Y'),
+                'role' => $user->role,
             ];
         });
         return response()->json($users);
