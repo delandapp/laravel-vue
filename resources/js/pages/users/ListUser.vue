@@ -6,11 +6,6 @@ import { Form, Field } from "vee-validate";
 import * as yup from "yup";
 
 const users = ref([]);
-const forms = reactive({
-    name: "",
-    email: "",
-    password: "",
-});
 const schema = yup.object({
     name: yup.string().min(3).required(),
     email: yup.string().email().required(),
@@ -24,8 +19,8 @@ const getUsers = () => {
 };
 
 const createUser = (values, { resetForm }) => {
-    console.log(values);
-    axios.post("/api/users", forms).then((response) => {
+    // console.log(values);
+    axios.post("/api/users", values).then((response) => {
         $("#createUserModal").modal("hide");
         // getUsers();
         // Or
