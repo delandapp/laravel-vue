@@ -7,7 +7,6 @@ import * as yup from "yup";
 import { useToastSweet } from "../../toastsweet";
 // const toast = useToastr();
 const toast = useToastSweet();
-
 const users = ref([]);
 const editing = ref(false);
 const form = ref(null);
@@ -43,13 +42,13 @@ const createUser = (values, { resetForm, setFieldError }) => {
             // Or
             users.value.unshift(response.data);
             resetForm();
-            toast.fire({
+            toast.Toast({
                 icon: "success",
                 title: "User created successfully",
             });
         })
         .catch((error) => {
-            toast.fire({
+            toast.Toast({
                 icon: "error",
                 title: error.response.data.message,
             });
@@ -77,18 +76,42 @@ const updateUser = (user, { resetForm, setFieldError }) => {
             const index = users.value.findIndex((u) => u.id === user.id);
             users.value[index] = response.data;
             $("#formUserModal").modal("hide");
-            toast.fire({
+            toast.Toast({
                 icon: "success",
                 title: "User updated successfully",
             });
         })
         .catch((error) => {
-            toast.fire({
+            toast.Toast({
                 icon: "error",
                 title: error.response.data.message,
             });
             setFieldError("email", error.response.data.errors.email[0]);
         });
+};
+
+const deleteUser = (id) => {
+    toast.DeleteToast(
+        () => {
+            axios
+                .delete(`/api/users/${id}`)
+                .then((response) => {
+                    const index = users.value.findIndex((u) => u.id === id);
+                    users.value.splice(index, 1);
+                    toast.Toast({
+                        icon: "success",
+                        title: "User deleted successfully",
+                    });
+                })
+                .catch((error) => {
+                    toast.Toast({
+                        icon: "error",
+                        title: error.response.data.message,
+                    });
+                });
+        },
+        () => getUsers()
+    );
 };
 
 const editUser = (user) => {
@@ -164,13 +187,21 @@ onMounted(() => {
                                         <td>{{ index + 1 }}</td>
                                         <td>{{ user.name }}</td>
                                         <td>{{ user.email }}</td>
-                                        <td>-</td>
+                                        <td>{{ user.created_at }}</td>
                                         <td>-</td>
                                         <td>
                                             <a
                                                 href="#"
                                                 @click.prevent="editUser(user)"
                                                 ><i class="fa fa-edit"></i
+                                            ></a>
+
+                                            <a
+                                                href="#"
+                                                @click.prevent="
+                                                    deleteUser(user.id)
+                                                "
+                                                ><i class="fa fa-trash"></i
                                             ></a>
                                         </td>
                                     </tr>

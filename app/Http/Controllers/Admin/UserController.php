@@ -10,7 +10,14 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::latest()->get();
+        $users = User::latest()->get()->map(function ($user) {
+            return [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'created_at' => $user->created_at->format('d-m-Y'),
+            ];
+        });
         return response()->json($users);
     }
 
@@ -40,6 +47,13 @@ class UserController extends Controller
             unset($request['password']);
         }
         $user->update($request->all());
+        return response()->json($user);
+    }
+
+    public function destroy($id)
+    {
+        $user = User::find($id);
+        $user->delete();
         return response()->json($user);
     }
 }
