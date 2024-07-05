@@ -13,4 +13,11 @@ class UserController extends Controller
         $users = User::latest()->get();
         return response()->json($users);
     }
+
+    public function store(Request $request)
+    {
+        $request['password'] = bcrypt($request->password);
+        $user = User::create($request->all());
+        return response()->json($user);
+    }
 }
