@@ -16,6 +16,11 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $data = $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required',
+        ]);
         $request['password'] = bcrypt($request->password);
         $user = User::create($request->all());
         return response()->json($user);
@@ -23,6 +28,9 @@ class UserController extends Controller
 
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'email' => 'required|email|unique:users,email',
+        ]);
         $user = User::find($id);
         if ($request->password) {
             $request['password'] = bcrypt($request->password);

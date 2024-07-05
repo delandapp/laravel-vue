@@ -28,17 +28,23 @@ const getUsers = () => {
     });
 };
 
-const createUser = (values, { resetForm }) => {
+const createUser = (values, { resetForm, setFieldError }) => {
     // console.log(values);
-    axios.post("/api/users", values).then((response) => {
-        $("#formUserModal").modal("hide");
-        // getUsers();
-        // Or
-        // users.value.push(response.data);
-        // Or
-        users.value.unshift(response.data);
-        resetForm();
-    });
+    axios
+        .post("/api/users", values)
+        .then((response) => {
+            $("#formUserModal").modal("hide");
+            // getUsers();
+            // Or
+            // users.value.push(response.data);
+            // Or
+            users.value.unshift(response.data);
+            resetForm();
+        })
+        .catch((error) => {
+            console.log(error);
+            setFieldError("email", error.response.data.errors.email[0]);
+        });
 };
 
 const addUser = () => {
@@ -46,29 +52,25 @@ const addUser = () => {
     $("#formUserModal").modal("show");
 };
 
-const handlingForm = () => {
-    console.log("test");
+const handlingForm = (values, action) => {
     if (editing.value) {
-        updateUser(formValue.value, form.value);
+        updateUser(values, action);
     } else {
-        createUser(formValue.value, form.value);
+        createUser(values, action);
     }
 };
 
-const updateUser = (user, { resetForm }) => {
-    console.log(user);
+const updateUser = (user, { resetForm, setFieldError }) => {
     axios
-        .put(`/api/users/${user.id}`, user)
+        .put(`/api/users/${formValue.value.id}`, user)
         .then((response) => {
             const index = users.value.findIndex((u) => u.id === user.id);
             users.value[index] = response.data;
             $("#formUserModal").modal("hide");
         })
         .catch((error) => {
+            setFieldError("email", error.response.data.errors.email[0]);
             console.log(error);
-        })
-        .finally(() => {
-            resetForm();
         });
 };
 
