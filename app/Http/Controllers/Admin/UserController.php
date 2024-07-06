@@ -51,6 +51,13 @@ class UserController extends Controller
         return response()->json($user);
     }
 
+    public function updateRole(Request $request, $id)
+    {
+        $user = User::find($id);
+        $user->update(['role' => $request->role]);
+        return response()->json($user);
+    }
+
     public function destroy($id)
     {
         $user = User::find($id);

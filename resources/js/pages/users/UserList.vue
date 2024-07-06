@@ -1,10 +1,12 @@
 <script setup>
 import axios from "axios";
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref } from "vue";
 import $ from "jquery";
 import { Form, Field } from "vee-validate";
 import * as yup from "yup";
 import { useToastSweet } from "../../toastsweet";
+import UserListItem from "./UserListItem.vue";
+import { formatCreatedAt } from "../../helper.js";
 // const toast = useToastr();
 const toast = useToastSweet();
 const users = ref([]);
@@ -30,6 +32,7 @@ const getUsers = () => {
     });
 };
 
+
 const createUser = (values, { resetForm, setFieldError }) => {
     // console.log(values);
     axios
@@ -40,7 +43,13 @@ const createUser = (values, { resetForm, setFieldError }) => {
             // Or
             // users.value.push(response.data);
             // Or
-            users.value.unshift(response.data);
+            users.value.unshift({
+                id: response.data.id,
+                name: response.data.name,
+                email: response.data.email,
+                created_at: formatCreatedAt(response.data.created_at),
+                role: "USER",
+            });
             resetForm();
             toast.Toast({
                 icon: "success",
@@ -90,28 +99,8 @@ const updateUser = (user, { resetForm, setFieldError }) => {
         });
 };
 
-const deleteUser = (id) => {
-    toast.DeleteToast(
-        () => {
-            axios
-                .delete(`/api/users/${id}`)
-                .then((response) => {
-                    const index = users.value.findIndex((u) => u.id === id);
-                    users.value.splice(index, 1);
-                    toast.Toast({
-                        icon: "success",
-                        title: "User deleted successfully",
-                    });
-                })
-                .catch((error) => {
-                    toast.Toast({
-                        icon: "error",
-                        title: error.response.data.message,
-                    });
-                });
-        },
-        () => getUsers()
-    );
+const userDeleted = (id) => {
+    users.value = users.value.filter((user) => user.id !== id);
 };
 
 const editUser = (user) => {
@@ -180,31 +169,14 @@ onMounted(() => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr
+                                    <UserListItem
                                         v-for="(user, index) in users"
                                         :key="user.id"
-                                    >
-                                        <td>{{ index + 1 }}</td>
-                                        <td>{{ user.name }}</td>
-                                        <td>{{ user.email }}</td>
-                                        <td>{{ user.created_at }}</td>
-                                        <td>{{ user.role }}</td>
-                                        <td>
-                                            <a
-                                                href="#"
-                                                @click.prevent="editUser(user)"
-                                                ><i class="fa fa-edit"></i
-                                            ></a>
-
-                                            <a
-                                                href="#"
-                                                @click.prevent="
-                                                    deleteUser(user.id)
-                                                "
-                                                ><i class="fa fa-trash"></i
-                                            ></a>
-                                        </td>
-                                    </tr>
+                                        :user="user"
+                                        :index="index"
+                                        @user-deleted="userDeleted"
+                                        @edit-user="editUser"
+                                    />
                                 </tbody>
                             </table>
                         </div>
