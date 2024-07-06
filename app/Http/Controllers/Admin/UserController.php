@@ -10,16 +10,25 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::latest()->get()->map(function ($user) {
-            return [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'created_at' => $user->created_at->format('d-m-Y'),
-                'role' => $user->role,
-            ];
-        });
+        // $users = User::paginate(2)->map(function ($user) {
+        //     return [
+        //         'id' => $user->id,
+        //         'name' => $user->name,
+        //         'email' => $user->email,
+        //         'created_at' => $user->created_at->format('d-m-Y'),
+        //         'role' => $user->role,
+        //     ];
+        // });
+        $users = User::latest()->paginate(5);
+
         return response()->json($users);
+    }
+
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+        $user = User::where('name', 'like', '%' . $query . '%')->orWhere('email', 'like', '%' . $query . '%')->paginate(5);
+        return response()->json($user);
     }
 
     public function store(Request $request)

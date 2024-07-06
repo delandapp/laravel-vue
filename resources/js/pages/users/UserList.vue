@@ -1,15 +1,19 @@
 <script setup>
 import axios from "axios";
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import $ from "jquery";
 import { Form, Field } from "vee-validate";
 import * as yup from "yup";
 import { useToastSweet } from "../../toastsweet";
 import UserListItem from "./UserListItem.vue";
-import { formatCreatedAt } from "../../helper.js";
+import { debounce } from "lodash";
+import { Bootstrap4Pagination } from "laravel-vue-pagination";
 // const toast = useToastr();
 const toast = useToastSweet();
-const users = ref([]);
+const searchQuery = ref(null);
+const users = ref({
+    data: [],
+});
 const editing = ref(false);
 const form = ref(null);
 const formValue = ref({});
@@ -26,12 +30,19 @@ const schemaEdit = yup.object({
     }),
 });
 
-const getUsers = () => {
-    axios.get("/api/users").then((response) => {
-        users.value = response.data;
-    });
+const getUsers = (page = 1) => {
+    if (searchQuery.value) {
+        axios
+            .get(`/api/users/search?query=${searchQuery.value}&page=${page}`)
+            .then((response) => {
+                users.value = response.data;
+            });
+    } else {
+        axios.get(`/api/users?page=${page}`).then((response) => {
+            users.value = response.data;
+        });
+    }
 };
-
 
 const createUser = (values, { resetForm, setFieldError }) => {
     // console.log(values);
@@ -41,13 +52,13 @@ const createUser = (values, { resetForm, setFieldError }) => {
             $("#formUserModal").modal("hide");
             // getUsers();
             // Or
-            // users.value.push(response.data);
+            // users.value.data.push(response.data);
             // Or
-            users.value.unshift({
+            users.value.data.unshift({
                 id: response.data.id,
                 name: response.data.name,
                 email: response.data.email,
-                created_at: formatCreatedAt(response.data.created_at),
+                created_at: response.data.created_at,
                 role: "USER",
             });
             resetForm();
@@ -82,8 +93,8 @@ const updateUser = (user, { resetForm, setFieldError }) => {
     axios
         .put(`/api/users/${formValue.value.id}`, user)
         .then((response) => {
-            const index = users.value.findIndex((u) => u.id === user.id);
-            users.value[index] = response.data;
+            const index = users.value.data.findIndex((u) => u.id === user.id);
+            users.value.data[index] = response.data;
             $("#formUserModal").modal("hide");
             toast.Toast({
                 icon: "success",
@@ -100,7 +111,7 @@ const updateUser = (user, { resetForm, setFieldError }) => {
 };
 
 const userDeleted = (id) => {
-    users.value = users.value.filter((user) => user.id !== id);
+    users.value.data = users.value.data.filter((user) => user.id !== id);
 };
 
 const editUser = (user) => {
@@ -112,6 +123,16 @@ const editUser = (user) => {
     };
     $("#formUserModal").modal("show");
 };
+
+const search = () => {
+    axios
+        .get(`/api/users/search`, { params: { query: searchQuery.value } })
+        .then((response) => {
+            users.value = response.data;
+        });
+};
+
+watch(searchQuery, debounce(search, 500));
 
 onMounted(() => {
     getUsers();
@@ -141,13 +162,21 @@ onMounted(() => {
     </div>
     <div class="content">
         <div class="container-fluid">
-            <button
-                type="button"
-                class="mb-2 btn btn-primary"
-                @click="addUser()"
-            >
-                Add New User
-            </button>
+            <div class="d-flex" style="justify-content: space-between">
+                <button
+                    type="button"
+                    class="mb-2 btn btn-primary"
+                    @click="addUser()"
+                >
+                    Add New User
+                </button>
+                <input
+                    type="text"
+                    class="form-control mb-2 w-25"
+                    placeholder="Search"
+                    v-model="searchQuery"
+                />
+            </div>
 
             <div class="row">
                 <div class="col-md-12">
@@ -168,9 +197,9 @@ onMounted(() => {
                                         <th>Action</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody v-if="users.data.length > 0">
                                     <UserListItem
-                                        v-for="(user, index) in users"
+                                        v-for="(user, index) in users.data"
                                         :key="user.id"
                                         :user="user"
                                         :index="index"
@@ -178,9 +207,20 @@ onMounted(() => {
                                         @edit-user="editUser"
                                     />
                                 </tbody>
+                                <tbody v-else>
+                                    <tr>
+                                        <td colspan="6" class="text-center">
+                                            No Data
+                                        </td>
+                                    </tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
+                    <Bootstrap4Pagination
+                        :data="users"
+                        @pagination-change-page="getUsers"
+                    />
                 </div>
 
                 <div

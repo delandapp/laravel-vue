@@ -2,6 +2,7 @@
 import axios from "axios";
 import { ref } from "vue";
 import { useToastSweet } from "../../toastsweet";
+import { formatCreatedAt } from "../../helper.js";
 const toast = useToastSweet();
 defineProps({
     user: Object,
@@ -72,7 +73,7 @@ const changeRole = (user, role) => {
         <td>{{ index + 1 }}</td>
         <td>{{ user.name }}</td>
         <td>{{ user.email }}</td>
-        <td>{{ user.created_at }}</td>
+        <td>{{ formatCreatedAt(user.created_at) }}</td>
         <td>
             <select
                 name="role-form"
